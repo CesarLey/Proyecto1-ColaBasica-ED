@@ -301,20 +301,18 @@
                         <button type="submit" class="btn btn-info">👁️ Peek Final</button>
                     </form>
                     
-                    <form method="post" asp-page-handler="EstaVacia">
-                        <button type="submit" class="btn btn-secondary">❓ ¿Está Vacía?</button>
-                    </form>
+                        <form method="post" asp-page-handler="Invertir">
+                            <button type="submit" class="btn btn-warning">
+                                🔁 Invertir Cola
+                            </button>
+                        </form>
                     
-                    <form method="post" asp-page-handler="EstaLlena">
-                        <button type="submit" class="btn btn-secondary">❓ ¿Está Llena?</button>
-                    </form>
+                    <!-- Botones de '¿Está Vacía?' y '¿Está Llena?' eliminados porque esa información aparece en el panel Estado de la Cola -->
                     
-                    <form method="post" asp-page-handler="Tamano">
-                        <button type="submit" class="btn btn-secondary">📊 Tamaño</button>
-                    </form>
+                    <!-- Botón 'Tamaño' eliminado porque el panel 'Estado de la Cola' ya muestra el tamaño -->
                     
                     <form method="post" asp-page-handler="Mostrar">
-                        <button type="submit" class="btn btn-secondary">📋 Mostrar</button>
+                        <button type="submit" class="btn btn-secondary">📋Mostrar/Ocultar</button>
                     </form>
                 </div>
 
@@ -355,26 +353,53 @@
 
                 <h2>📋 Visualización de la Cola</h2>
                 <div class="cola-visual">
-                    @if (Model.ElementosCola != null && Model.ElementosCola.Any())
+                    @* Si el usuario activó "Mostrar", mostramos la cola completa. *@
+                    @if (Model.MostrarVisible)
                     {
-                        <span style="color: #667eea; font-weight: 600;">Frente →</span>
-                        @foreach (var elemento in Model.ElementosCola)
+                        @if (Model.ElementosCola != null && Model.ElementosCola.Any())
                         {
-                            <div class="cola-item">@elemento</div>
-                            if (elemento != Model.ElementosCola.Last())
+                            <span style="color: #667eea; font-weight: 600;">Frente →</span>
+                            @foreach (var elemento in Model.ElementosCola)
                             {
-                                <span class="arrow">→</span>
+                                <div class="cola-item">@elemento</div>
+                                if (elemento != Model.ElementosCola.Last())
+                                {
+                                    <span class="arrow">→</span>
+                                }
                             }
+                            <span style="color: #667eea; font-weight: 600;">← Final</span>
                         }
-                        <span style="color: #667eea; font-weight: 600;">← Final</span>
+                        else
+                        {
+                            <p class="cola-empty">Cola vacía - No hay elementos</p>
+                        }
                     }
                     else
                     {
-                        <p class="cola-empty">Cola vacía - No hay elementos</p>
+                        @* Si no está en modo Mostrar, manejar visualmente Peek Frente o Peek Final *@
+                        @if (Model.PeekFrenteVisible && Model.ElementosCola != null && Model.ElementosCola.Any())
+                        {
+                            <div style="display:flex; align-items:center; justify-content:center; gap:12px; width:100%;">
+                                <span style="color: #667eea; font-weight: 600;">Frente →</span>
+                                <div class="cola-item">@Model.ElementosCola.First()</div>
+                            </div>
+                        }
+                        else if (Model.PeekFinalVisible && Model.ElementosCola != null && Model.ElementosCola.Any())
+                        {
+                            <div style="display:flex; align-items:center; justify-content:center; gap:12px; width:100%;">
+                                <div class="cola-item">@Model.ElementosCola.First()</div>
+                                <span style="color: #667eea; font-weight: 600;">← Final</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="cola-empty">Visualización oculta. Presiona "Mostrar" para ver la cola completa.</p>
+                        }
                     }
                 </div>
 
-                @if (Model.ElementosCola != null && Model.ElementosCola.Any())
+                @* Mostrar listado de elementos solamente si estamos en modo Mostrar o si hay un elemento de Peek *@
+                @if (Model.MostrarVisible && Model.ElementosCola != null && Model.ElementosCola.Any())
                 {
                     <div class="alert alert-info" style="margin-top: 15px;">
                         <strong>Elementos:</strong> [@string.Join(", ", Model.ElementosCola)]
