@@ -8,6 +8,8 @@ namespace BancoWebApp.Pages
     public class IndexModel : PageModel
     {
         private static Queue<int> cola = new Queue<int>();
+        // Lock para proteger acceso concurrente a la cola
+        private static readonly object colaLock = new object();
         private const int CAPACIDAD_MAXIMA = 10;
         // Controla si la visualización completa de la cola está visible.
         private static bool mostrarVisible = false;
@@ -40,40 +42,46 @@ namespace BancoWebApp.Pages
 
         public IActionResult OnPostEncolar()
         {
-            if (cola.Count >= CAPACIDAD_MAXIMA)
+            lock (colaLock)
             {
-                Resultado = $"❌ Error: Cola llena (capacidad máxima: {CAPACIDAD_MAXIMA})";
+                if (cola.Count >= CAPACIDAD_MAXIMA)
+                {
+                    Resultado = $"❌ Error: Cola llena (capacidad máxima: {CAPACIDAD_MAXIMA})";
+                }
+                else
+                {
+                    // Encolar correctamente al final (tail/rear)
+                    cola.Enqueue(Valor);
+                    Resultado = $"✅ Encolado al final: {Valor}";
+                }
+                ActualizarEstado();
+                // Limpiar banderas de peek para evitar que una vista de peek previa persista
+                PeekFrenteVisible = false;
+                PeekFinalVisible = false;
+                // No cambiar la visibilidad: solo actualizar la lista si está en modo mostrar
+                ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             }
-            else
-            {
-                // Encolar correctamente al final (tail/rear)
-                cola.Enqueue(Valor);
-                Resultado = $"✅ Encolado al final: {Valor}";
-            }
-            ActualizarEstado();
-            // Limpiar banderas de peek para evitar que una vista de peek previa persista
-            PeekFrenteVisible = false;
-            PeekFinalVisible = false;
-            // No cambiar la visibilidad: solo actualizar la lista si está en modo mostrar
-            ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             return Page();
         }
 
         public IActionResult OnPostDesencolar()
         {
-            if (cola.Count == 0)
+            lock (colaLock)
             {
-                Resultado = "❌ Error: Cola vacía";
+                if (cola.Count == 0)
+                {
+                    Resultado = "❌ Error: Cola vacía";
+                }
+                else
+                {
+                    int valor = cola.Dequeue();
+                    Resultado = $"► Desencolado: {valor}";
+                }
+                ActualizarEstado();
+                PeekFrenteVisible = false;
+                PeekFinalVisible = false;
+                ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             }
-            else
-            {
-                int valor = cola.Dequeue();
-                Resultado = $"► Desencolado: {valor}";
-            }
-            ActualizarEstado();
-            PeekFrenteVisible = false;
-            PeekFinalVisible = false;
-            ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             return Page();
         }
 
@@ -141,37 +149,43 @@ namespace BancoWebApp.Pages
 
         public IActionResult OnPostInvertir()
         {
-            if (cola.Count == 0)
+            lock (colaLock)
             {
-                Resultado = "📋 Cola vacía: []";
+                if (cola.Count == 0)
+                {
+                    Resultado = "📋 Cola vacía: []";
+                }
+                else if (cola.Count == 1)
+                {
+                    Resultado = "📋 Cola con 1 elemento (no se invierte)";
+                }
+                else
+                {
+                    int[] elementos = cola.ToArray();
+                    System.Array.Reverse(elementos);
+                    cola = new Queue<int>(elementos);
+                    Resultado = "🔁 Cola invertida";
+                }
+                ActualizarEstado();
+                PeekFrenteVisible = false;
+                PeekFinalVisible = false;
+                ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             }
-            else if (cola.Count == 1)
-            {
-                Resultado = "📋 Cola con 1 elemento (no se invierte)";
-            }
-            else
-            {
-                int[] elementos = cola.ToArray();
-                System.Array.Reverse(elementos);
-                cola = new Queue<int>(elementos);
-                Resultado = "🔁 Cola invertida";
-            }
-            ActualizarEstado();
-            PeekFrenteVisible = false;
-            PeekFinalVisible = false;
-            ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
             return Page();
         }
 
         public IActionResult OnPostLimpiar()
         {
-            int cantidad = cola.Count;
-            cola.Clear();
-            Resultado = $"🧹 Cola limpiada ({cantidad} elementos eliminados)";
-            ActualizarEstado();
-            PeekFrenteVisible = false;
-            PeekFinalVisible = false;
-            ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
+            lock (colaLock)
+            {
+                int cantidad = cola.Count;
+                cola.Clear();
+                Resultado = $"🧹 Cola limpiada ({cantidad} elementos eliminados)";
+                ActualizarEstado();
+                PeekFrenteVisible = false;
+                PeekFinalVisible = false;
+                ElementosCola = mostrarVisible ? cola.ToList() : new List<int>();
+            }
             return Page();
         }
 
