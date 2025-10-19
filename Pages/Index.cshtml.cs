@@ -46,13 +46,9 @@ namespace BancoWebApp.Pages
             }
             else
             {
-                // Insertar el nuevo valor al frente de la cola (push front)
-                var actuales = cola.ToArray();
-                var nuevos = new int[actuales.Length + 1];
-                nuevos[0] = Valor;
-                System.Array.Copy(actuales, 0, nuevos, 1, actuales.Length);
-                cola = new Queue<int>(nuevos);
-                Resultado = $"✅ Encolado al frente: {Valor}";
+                // Encolar correctamente al final (tail/rear)
+                cola.Enqueue(Valor);
+                Resultado = $"✅ Encolado al final: {Valor}";
             }
             ActualizarEstado();
             // Limpiar banderas de peek para evitar que una vista de peek previa persista
