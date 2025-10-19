@@ -342,3 +342,10 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.Las 
 ---
 
 ⭐ Si te gusta este proyecto, dale una estrella en GitHub!
+
+## Nota sobre concurrencia
+
+La implementación interna de la cola usa una instancia estática de `Queue<int>` en memoria. Para evitar condiciones de carrera cuando varias solicitudes acceden simultáneamente a la cola, se ha añadido una protección sencilla mediante un `lock` (campo `colaLock`) que serializa las operaciones críticas: Enqueue, Dequeue, Invertir y Limpiar.
+
+Esto mantiene el comportamiento FIFO esperado y evita que la cola supere la capacidad o se corrompa en escenarios concurrentes. Para producción se puede considerar usar `ConcurrentQueue<T>` con mecanismos adicionales de control de capacidad, o persistir el estado en una base de datos.
+
